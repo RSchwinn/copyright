@@ -1,0 +1,71 @@
+---
+title: "main_text_results"
+author: "Richard Schwinn"
+date: "6/30/2019"
+output:
+  word_document: default
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = F,
+                      warning = F,
+                      error = F,
+                      message = F)
+source("step_2_data_analysis.R")
+Sys.setenv("RSTUDIO_PANDOC" = "PATH TO PANDOC BIN")
+```
+
+```{r, include = F}
+t3 = make_tables(t3_formulas, estimation_technique = "prais") # Use "lm" for OLS
+t4 = make_tables(t4_formulas, estimation_technique = "prais")
+t5 = make_tables(t5_formulas, estimation_technique = "prais") # Or use "orcutt" for cochrane-orcutt
+t6 = make_tables(t6_formulas, estimation_technique = "prais")
+t7 = make_tables(t7_formulas, estimation_technique = "prais",
+            min_year = 1909,
+            max_year = 2006)
+```
+
+# Table 3 Log Total Copyright Registrations, 1790–2015 
+
+```{r, results='asis'}
+t3
+```
+
+# Table 4 Log Total Copyright Registrations, 1790–2015 
+
+```{r, results='asis'}
+t4
+```
+
+# Table 5 Log Total Copyright Registrations, 1790–2015 
+
+```{r, results='asis'}
+t5
+```
+
+
+```{r}
+years = (0:750)/10
+registrations = exp(5.452 *log(years) - 0.635 *log(years)^2)
+library(ggplot2)
+ggplot(data.frame(years, registrations),
+       aes(x = years, y = registrations))+
+    geom_line()
+
+```
+
+# Table 6 Log Total Copyright Registrations per 100,000 people, 1790–2015 
+
+```{r, results='asis'}
+t6
+```
+
+
+# Table 7 Log Renewals, 1909–2006 
+
+```{r, results='asis'}
+t7
+```
+
