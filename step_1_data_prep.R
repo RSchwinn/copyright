@@ -416,15 +416,3 @@ generated_variables = colnames(df)[!(colnames(df) %in% names_before_gen)]
 openxlsx::write.xlsx(df, "copyright_data_ready_for_analysis.xlsx")
 
 
-# (compare the data to the pre-submission data which were produced under a different set of assumptions) ----
-#
-# Previously step 4 was skipped and step 5 removed the counts for more classes. 
-# alt_df = readRDS("full_analysis/saved_prior.RDS")
-# 
-# old = round(exp(alt_df$log.reg.total.w.pages))
-# new = round((df$total.registrations.post.1790))
-# class_N = round(as.numeric(df$registrations.class.N))
-# 
-# it = data.frame(year = 1790:2015, new, old, difference = (new-old), class_N)
-# View(it)
-# 
