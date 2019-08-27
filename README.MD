@@ -14,9 +14,9 @@ https://github.com/RSchwinn/copyright/
  
 2. Download and install R, from https://cloud.r-project.org/, and RStudio, from https://www.rstudio.com/products/rstudio/download/#download.
  
-3. After both R and RStudio are installed, unzip the repository from step (1), if it was not automatically unzipped, and open the file `copyright.Rproj` file.
+3. After both R and RStudio are installed, unzip the repository from step (1), if it was not automatically unzipped, and open the file `copyright.Rproj`.
  
-4. From the "Files” panel, select and open `step_1_data_prep.R` and run each line of code in the file (in order). To run a line of code, put the cursor on a given line and click the RUN button (or press **CTRL+ENTER** on PC or **COMMAND+ENTER** on MAC). To run more than one line at a time, highlight additional lines of using **SHIFT** on your keyboard or your mouse.
+4. From the "Files” panel, select and open `step_1_data_prep.R` and run each line of code in the file (in order). To run a line of code, put the cursor on a given line and click the RUN button (or press **CTRL+ENTER** on PC or **COMMAND+ENTER** on MAC). To run more than one line at a time, highlight additional lines of using **SHIFT** on your keyboard or use your mouse.
  
 5. Next, select and open `step_2_data_analysis.R` and run each line of code in the file.
 
