@@ -1,7 +1,7 @@
 ### 
 ### Note:
 ###      The overall sumary statistics, such as R-squared, are not displayed in the
-###      combined tables. Please use the manual appraoch to find these 
+###      combined tables. Please use the manual approach to find these 
 ###      estimates.
 ### 
 
