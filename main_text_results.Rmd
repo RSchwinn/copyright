@@ -3,10 +3,10 @@ title: "main_text_results"
 author: "Richard Schwinn"
 date: "6/30/2019"
 output:
+  pdf_document: default
+  word_document: default
   html_document:
     df_print: paged
-  word_document: default
-  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
