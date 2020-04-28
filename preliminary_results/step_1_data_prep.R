@@ -115,19 +115,9 @@ df$registrations.class.A = as.numeric(df$registrations.class.A)
 df[df$year == 1902, c("total.registrations.post.1790", "total.registrations.post.1870")] = df[df$year == 1902, c("total.registrations.post.1790", "total.registrations.post.1870")] + df[df$year == 1902, "registrations.class.A"]
 
 df = df %>%
-    interpolate_function(variables_to_interpolate = c("total.registrations.post.1870",
-                                                      "total.registrations.post.1790",
-                                                      "registrations.class.A",
-                                                      # "registrations.class.B",
-                                                      # "registrations.class.CD",
-                                                      "registrations.class.GHIJK",
-                                                      "registrations.class.LM",
-                                                      "renewals.total",
-                                                      "renewals.class.A",
-                                                      "renewals.class.B",
-                                                      "renewals.class.CD",
-                                                      "renewals.class.GHIJK",
-                                                      "renewals.class.LM"),
+    interpolate_function(variables_to_interpolate = c("registrations.class.A",
+                                                      "total.registrations.post.1870",
+                                                      "total.registrations.post.1790"),
                          the_year = 1978)
 
 # Replaces NAs with zeros
@@ -402,10 +392,7 @@ df[df == -Inf] = 0
 
 # This creates variables measuring the expected life od copyright. See Landes and Posner.
 df$depreciation.rate = NA
-df$depreciation.rate[120:217] = log((df$total.registrations.post.1790[92:189]/df$renewals.total[120:217]))/28
-
-# it = df %>%
-#   select(year, total.registrations.post.1790, renewals.total, depreciation.rate, expected.life)
+df$depreciation.rate[120:217] = log((df$total.registrations.post.1870[92:189]/df$renewals.total[120:217]))/28
 
 df$expected.life = NA
 df$expected.life[120:217] = 1/df$depreciation.rate[120:217]
@@ -425,8 +412,7 @@ df$reg.per.cap.gdp = df$total.registrations.post.1870.per100k/df$real.gdp
 
 generated_variables = colnames(df)[!(colnames(df) %in% names_before_gen)]
 
-df = df %>% 
-  select(year, everything())
-
 # (9) saves the wrangled data ----
 openxlsx::write.xlsx(df, "copyright_data_ready_for_analysis.xlsx")
+
+

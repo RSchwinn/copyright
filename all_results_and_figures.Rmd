@@ -1,0 +1,1469 @@
+---
+title: "Figures and Statistical Results for An Empirical Study of 225 Years of Copyright Registrations"
+author: "Rosen Z. and Schwinn R."
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  pdf_document: 
+    toc: true
+  word_document: default
+  html_document:
+    df_print: paged
+header-includes:
+  - \usepackage[section]{placeins}
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = F,
+                      warning = F,
+                      error = F,
+                      message = F)
+```
+
+```{r, include = F}
+qload = function(..., char, repo = "http://cran.us.r-project.org"){
+    if (!missing(char)) {
+        new_packages <- char
+    } else {
+        new_packages <- as.character(match.call(expand.dots = FALSE)[[2]])
+    }
+    oneload = function (x){
+        if(!(x %in% installed.packages(.Library))){
+            install.packages(x,
+                             repos = repo,
+                             # dependencies = T,
+                             character.only = T)
+        }
+    }
+    invisible(sapply(new_packages, 
+                     oneload))
+    invisible(sapply(new_packages,
+                     require, character.only = T))
+}
+
+qload(
+    tidyverse,
+    orcutt,
+    prais,
+    ggplot2,
+    zoo,
+    mFilter,
+    openxlsx,
+    broom,
+    flextable,
+    pander,
+    huxtable,
+    jtools
+)
+
+if(!file.exists("copyright_data_ready_for_analysis.xlsx")){
+  source("step_1_data_prep.R")
+}
+
+df = openxlsx::read.xlsx("copyright_data_ready_for_analysis.xlsx")
+rownames(df) = df$year
+# formulas for main text regressions ----
+t3_formulas = c("total.registrations.post.1790_log ~ 
+                real.registration.fee_log + 
+                real.gdp_log ", 
+                
+                "total.registrations.post.1790_log ~ 
+                real.registration.fee_log + 
+                real.gdp_log + 
+                copyright.act.1831", 
+                
+                "total.registrations.post.1790_log ~ 
+                real.registration.fee_log +
+                real.gdp_log + 
+                copyright.act.1831 + 
+                copyright.act.1870 ",
+                
+                "total.registrations.post.1790_log ~
+                real.registration.fee_log + 
+                real.gdp_log +
+                copyright.act.1831 + 
+                copyright.act.1870 + 
+                copyright.act.1909 ", 
+                
+                "total.registrations.post.1790_log ~ 
+                real.registration.fee_log + 
+                real.gdp_log + 
+                copyright.act.1831 + 
+                copyright.act.1870 + 
+                copyright.act.1909 + 
+                copyright.act.1976", 
+                
+                "total.registrations.post.1790_log ~ 
+                real.registration.fee_log + 
+                real.gdp_log + 
+                copyright.act.1831 +
+                copyright.act.1870 + 
+                copyright.act.1909 + 
+                copyright.act.1976 + 
+                Berne.1988" ) 
+
+
+t4_formulas = c("total.registrations.post.1790_log ~ 
+                real.registration.fee_log + 
+                real.gdp_log + 
+                copyright.act.1831",
+                
+                
+                "total.registrations.post.1790_log ~ 
+                real.registration.fee_log +
+                real.gdp_log + 
+                copyright.act.1831 +
+                total.term_log +
+                total.term_log2",
+                
+                "total.registrations.post.1790_log ~ 
+                real.registration.fee_log + 
+                real.gdp_log + 
+                total.term_log + 
+                total.term_log2" ) 
+
+t5_formulas = c("total.registrations.post.1790_log ~ 
+                real.registration.fee_log + 
+                real.gdp_log ",
+                
+                "total.registrations.post.1790_log ~ 
+                real.registration.fee_log + 
+                real.gdp_log +
+                total.term_log",
+                
+                "total.registrations.post.1790_log ~
+                real.registration.fee_log + 
+                real.gdp_log + 
+                total.term_log +
+                total.term_log2",
+                
+                "total.registrations.post.1790_log ~ 
+                real.registration.fee_log + 
+                real.gdp_log + 
+                total.term_log + 
+                total.term_log2 + 
+                real.gdp_log.x.1909 +
+                copyright.act.1909" ) 
+
+
+
+t6_formulas = c("total.registrations.post.1790.per100k_log ~ 
+                real.registration.fee_log + 
+                real.gdp_log ",
+                
+                "total.registrations.post.1790.per100k_log ~ 
+                real.registration.fee_log + 
+                real.gdp_log +
+                total.term_log",
+                
+                "total.registrations.post.1790.per100k_log ~
+                real.registration.fee_log + 
+                real.gdp_log + 
+                total.term_log +
+                total.term_log2",
+                
+                "total.registrations.post.1790.per100k_log ~ 
+                real.registration.fee_log + 
+                real.gdp_log + 
+                total.term_log + 
+                total.term_log2 + 
+                real.gdp_log.x.1909 +
+                copyright.act.1909" ) 
+
+
+t7_formulas = c("renewals.total_log ~ 
+                real.renewal.fee_log  +
+                real.rec.spending_log + 
+                registrations_lagged_28_log
+                ",
+                
+                "renewals.total_log ~ 
+                real.renewal.fee_log  +
+                real.rec.spending_log + 
+                registrations_lagged_28_log + 
+                year
+                ",
+                
+                "renewals.total_log ~ 
+                real.renewal.fee_log  +
+                real.rec.spending_log + 
+                registrations_lagged_28_log +
+                renewal.ext.1962 +
+                auto.renewal.1992",
+                
+                "renewals.total_log ~ 
+                real.renewal.fee_log  +
+                real.rec.spending_log + 
+                registrations_lagged_28_log +
+                year +
+                renewal.ext.1962 +
+                auto.renewal.1992"
+                )
+
+# formulas for appendix regressions ----
+tA1_formulas = c("total.registrations.post.1790_log ~ 
+                real.registration.fee_log + 
+                real.gdp_log + 
+                total.term_log + 
+                total.term_log2 + 
+                real.gdp_log.x.1909 +
+                copyright.act.1909") 
+
+
+tA2_formulas = c("total.registrations.post.1790_log ~ 
+                real.registration.fee_log + 
+                real.gdp_log + 
+                total.term_log + 
+                total.term_log2 + 
+                real.gdp_log.x.1909 +
+                copyright.act.1909",
+                 
+                 "total.registrations.post.1790_log ~ 
+                real.registration.fee_log + 
+                real.gdp_log + 
+                # total.term_log + 
+                # total.term_log2 + 
+                # real.gdp_log.x.1909 +
+                copyright.act.1909 +
+                copyright.act.1831 +
+                copyright.act.1870 +
+                renewal.ext.1962 +
+                sound.1972 +
+                copyright.act.1976 +
+                Berne.1988 +
+                Bono.1998",
+                 
+                 "total.registrations.post.1790_log ~ 
+                real.registration.fee_log + 
+                real.gdp_log + 
+                # total.term_log + 
+                # total.term_log2 + 
+                real.gdp_log.x.1909 +
+                copyright.act.1909 +
+                copyright.act.1831 +
+                copyright.act.1870 +
+                renewal.ext.1962 +
+                sound.1972 +
+                copyright.act.1976 +
+                Berne.1988 +
+                Bono.1998",
+                 
+                 "total.registrations.post.1790_log ~ 
+                real.registration.fee_log + 
+                real.gdp_log + 
+                total.term_log +
+                total.term_log2 +
+                real.gdp_log.x.1909 +
+                copyright.act.1909 +
+                copyright.act.1831 +
+                copyright.act.1870 +
+                renewal.ext.1962 +
+                sound.1972 +
+                copyright.act.1976 +
+                Berne.1988") 
+
+tA3_formulas = c(
+    "log(total.registrations.post.1790_log) ~
+                year + 
+                real.rec.spending_log +
+                log.expected.life +
+                real.registration.fee_log + 
+                renewal.ext.1962 +
+                sound.1972 +
+                copyright.act.1976 +
+                Berne.1988 +
+                Bono.1998")
+
+
+
+tA4_formulas = c("registrations.class.A_log ~ 
+                real.gdp_log +
+                real.registration.fee_log +  
+                real.gdp_log.x.1909 +
+                copyright.act.1909 +
+                renewal.ext.1962 +
+                sound.1972 +
+                copyright.act.1976 +
+                Berne.1988 +
+                Bono.1998",
+                 
+                 "registrations.class.B_log ~ 
+                real.gdp_log +
+                real.registration.fee_log +
+                real.gdp_log.x.1909 +
+                copyright.act.1909 +
+                renewal.ext.1962
+                ",
+                 
+                 "registrations.class.CD_log ~ 
+                real.gdp_log +
+                real.registration.fee_log + 
+                real.gdp_log.x.1909 +
+                copyright.act.1909 +
+                renewal.ext.1962
+                ",
+                 
+                 "registrations.class.E_log ~ 
+                real.gdp_log +
+                real.registration.fee_log + 
+                real.gdp_log.x.1909 +
+                copyright.act.1909 +
+                renewal.ext.1962 +
+                sound.1972 +
+                copyright.act.1976 +
+                Berne.1988+
+                Bono.1998
+                ",
+                 
+                 "registrations.class.GHIJK_log ~ 
+                real.gdp_log +
+                real.registration.fee_log + 
+                real.gdp_log.x.1909 +
+                copyright.act.1909 +
+                renewal.ext.1962 +
+                sound.1972 +
+                copyright.act.1976 +
+                Berne.1988+
+                Bono.1998
+                ",
+                 
+                "registrations.class.LM_log ~ 
+                real.gdp_log +
+                real.registration.fee_log + 
+                renewal.ext.1962 +
+                sound.1972 +
+                copyright.act.1976 +
+                Berne.1988 +
+                Bono.1998
+                ") 
+
+
+tA5_formulas = c(
+    "log(renewals.class.A) ~
+                real.rec.spending_log +
+                real.renewal.fee_log +
+                registrations_lagged_28_log +
+                copyright.act.1909 +
+                renewal.ext.1962 +
+                sound.1972 +
+                copyright.act.1976 +
+                Berne.1988",
+    
+    "log(renewals.class.B) ~
+               real.rec.spending_log +
+                real.renewal.fee_log +
+                registrations_lagged_28_log +
+                copyright.act.1909 +
+                renewal.ext.1962 +
+                sound.1972 +
+                copyright.act.1976 +
+                Berne.1988",
+    
+    "log(renewals.class.CD) ~
+               real.rec.spending_log +
+                real.renewal.fee_log +
+                registrations_lagged_28_log +
+                copyright.act.1909 +
+                renewal.ext.1962 +
+                sound.1972 +
+                copyright.act.1976 +
+                Berne.1988",
+    
+    "log(renewals.class.E) ~
+                real.rec.spending_log +
+                real.renewal.fee_log +
+                registrations_lagged_28_log +
+                copyright.act.1909 +
+                renewal.ext.1962 +
+                sound.1972 +
+                copyright.act.1976 +
+                Berne.1988",
+    
+    "log(renewals.class.GHIJK) ~
+                real.rec.spending_log +
+                real.renewal.fee_log +
+                registrations_lagged_28_log +
+                renewal.ext.1962 +
+                sound.1972 +
+                copyright.act.1976 +
+                Berne.1988",
+    
+    "log(renewals.class.LM) ~
+               real.rec.spending_log +
+                real.renewal.fee_log +
+                registrations_lagged_28_log +
+                renewal.ext.1962 +
+                sound.1972 +
+                copyright.act.1976 +
+                Berne.1988")
+
+
+    tA6_formulas =  c("renewals.total_log ~
+               real.rec.spending_log +
+                real.renewal.fee_log +
+                registrations_lagged_28_log +
+                renewal.ext.1962 +
+                sound.1972 +
+                copyright.act.1976 +
+                Berne.1988",
+                "log(renewals.total/registrations_lagged_28) ~
+               real.rec.spending_log +
+                real.renewal.fee_log +
+                renewal.ext.1962 +
+                sound.1972 +
+                copyright.act.1976 +
+                Berne.1988")
+
+
+
+# functions for displaying regression results ----
+make_tidy = function(x){
+    x = summary(x)
+    class(x) = "summary.lm"
+    return(x)
+} 
+
+make_tables = function(formulas_vector = t3_formulas,
+                       estimation_technique = "lm",
+                       dataframe = df,
+                       min_year = -Inf,
+                       max_year = Inf,
+                       # std.error, statistic, p.value 
+                       error_format = "statistic" 
+                       ){
+    require(huxtable)
+    
+    dataframe = dataframe %>%
+        filter(year > (min_year - 1), year < (max_year + 1))
+    
+    results = list()
+    adj_R_squared = c()
+    durbin_watson = c()
+    
+    results_string = ""
+    make_tidy = function(x){
+        x = summary(x)
+        class(x) = "summary.lm"
+        # class(x) = "lm"
+        # tidy(x)
+        return(x)
+    }
+    
+    if(estimation_technique == "lm"){
+        for(i in seq_along(formulas_vector)){
+            results[[i]] = lm(formulas_vector[i], data = dataframe) %>% make_tidy
+            results_string = paste0(c(results_string, ", results[[", i, "]]"), collapse = "") %>%
+                gsub("^, ", "", .)
+        }
+        results_string
+        table_command = paste0("the_table = huxreg(", results_string, ", error_format = '({", error_format, "})' )")
+        eval(parse(text = table_command ))
+    }
+    
+    if(estimation_technique == "prais"){
+        for(i in seq_along(formulas_vector)){
+            
+            # runs prais-winsten analysis
+            temp = prais::prais_winsten(formulas_vector[i], 
+                                        data = dataframe)
+            
+            # calculates adjusted R squared
+            y = temp$model[,1]
+            y_hat = temp$fitted.values
+            parameters = ncol(temp$model)-1
+            N = nrow(temp$model)
+            R2 = 1-(sum((y_hat - y)^2))/sum((y-mean(y))^2)
+            adj_R_squared[i] = 1-(1-R2)*((N-1)/(N-(parameters)-1))
+            
+            # adds results to the results list
+            results[[i]] = temp %>% make_tidy
+            
+            # retrieves durbin-watson statistic
+            durbin_watson[i] = results[[i]]$dw[2]
+            
+            
+            # adds to a string that will call the results
+            results_string = paste0(c(results_string, ", results[[", i, "]]"), collapse = "") %>%
+                gsub("^, ", "", .)
+        }
+        results_string
+        table_command = paste0("the_table = huxreg(", results_string, ", error_format = '({", error_format, "})', statistics = c(N = 'nobs') )")
+        eval(parse(text = table_command ))
+        
+        the_table = rbind(the_table[1:(nrow(the_table)-2),],
+                          c("Durbin-Watson", durbin_watson),
+                          c("adj. R-squared", adj_R_squared),
+                          the_table[(nrow(the_table)-1):nrow(the_table),])
+    }
+    
+    if(estimation_technique == "orcutt"){
+        for(i in seq_along(formulas_vector)){
+            results[[i]] = orcutt::cochrane.orcutt(lm(formulas_vector[i], data = dataframe)) %>% make_tidy
+            results_string = paste0(c(results_string, ", results[[", i, "]]"), collapse = "") %>%
+                gsub("^, ", "", .)
+        }
+        results_string
+        table_command = paste0("the_table = huxreg(", results_string, ", error_format = '({", error_format, "})' )")
+        eval(parse(text = table_command ))
+        
+        the_table
+    }
+    return(the_table)
+}
+
+# Sys.setenv("RSTUDIO_PANDOC" = "PATH TO PANDOC BIN")
+```
+
+# Figure 4 - Raw and Normalized Registrations 1870-2015
+
+```{r}
+library(ggthemes)
+library(scales)
+library(gridExtra)
+dir.create("figures", showWarnings = F)
+options(scipen = 99)
+
+f_df = df  %>%
+  filter(year %in% 1870:2015) %>% 
+  select(year,
+         original.total.registrations.post.1790,
+         total.registrations.post.1790
+         ) %>%
+  rename(`Raw Registrations` = original.total.registrations.post.1790,
+         `Normalized Registrations` = total.registrations.post.1790) %>%
+  pivot_longer(cols = c(
+   names(.)[names(.) != 'year']
+  )) 
+
+
+ggplot(f_df, aes(year, value)) +
+  geom_path() +
+  geom_point(alpha = 0.7) +
+  geom_smooth() +
+  scale_y_continuous(labels = comma) +
+  theme_excel_new() +
+  theme(panel.grid.major.x = element_blank()) +
+  facet_wrap(~name,
+             nrow = 2)
+
+ggsave(width = 5, height = 4, dpi = 600, filename = "figures/Figure 4 - Raw and Normalized Registrations 1870-2015.png")
+
+```
+
+# Figure 5 - Copyright Registrations per 100,000 People, 1790-1870 and 1870-2015
+
+```{r}
+f_df = df  %>%
+  filter(year %in% 1790:1870) %>% 
+  select(year,
+         total.registrations.post.1790.per100k
+         ) %>%
+  # rename(`Raw Registrations` = original.total.registrations.post.1790,
+  #        `Normalized Registrations` = total.registrations.post.1790) %>%
+  pivot_longer(cols = c(
+   names(.)[names(.) != 'year']
+  )) 
+
+a = ggplot(f_df, aes(year, value)) +
+  geom_path() +
+  geom_point(alpha = 0.7) +
+  geom_smooth()+
+  scale_y_continuous(labels = comma) +
+  theme_excel_new() +
+  theme(panel.grid.major.x = element_blank()) + 
+  theme(axis.title = element_blank())
+
+f_df = df  %>%
+  filter(year %in% 1870:2015) %>% 
+  select(year,
+         total.registrations.post.1790.per100k
+         ) %>%
+  # rename(`Raw Registrations` = original.total.registrations.post.1790,
+  #        `Normalized Registrations` = total.registrations.post.1790) %>%
+  pivot_longer(cols = c(
+   names(.)[names(.) != 'year']
+  )) 
+
+b = ggplot(f_df, aes(year, value)) +
+  geom_path() +
+  geom_point(alpha = 0.7) +
+  geom_smooth()+
+  scale_y_continuous(labels = comma) +
+  theme_excel_new() +
+  theme(panel.grid.major.x = element_blank()) 
+c = arrangeGrob(a,b)
+c
+ggsave(width = 5, height = 4, dpi = 600, filename = "figures/Figure 5 - Copyright Registrations per 100,000 People, 1790-1870 and 1870-2015.png", c)
+
+```
+
+<!-- # Figure 6 - Copyright Registrations per Capita by Type 1870-2012 -->
+
+```{r}
+# f_df = df %>%
+#   filter(year %in% 1870:2012) %>% 
+#   select(year,
+#          registrations.class.A.per100k,                     
+#          registrations.class.B.per100k,                     
+#          registrations.class.E.per100k 
+#          ) %>%
+#   rename(`A: Books` = registrations.class.A.per100k,
+#          `B: Periodicals` = registrations.class.B.per100k,
+#          `E: Music` = registrations.class.E.per100k ) %>%
+#   pivot_longer(cols = c(
+#    names(.)[names(.) != 'year']
+#   )) 
+# f_df = f_df[f_df$value != 0, ]
+# 
+# a = ggplot(f_df, aes(year, value)) +
+#   geom_path(alpha = 0.7, aes(color = name, linetype = name)) +
+#   geom_point(alpha = 0.7, aes(color = name, shape = name)) +
+#   scale_y_continuous(labels = comma) +
+#   theme_excel_new() +
+#   theme(panel.grid.major.x = element_blank()) + 
+#   theme(axis.title = element_blank()) 
+# 
+# f_df = df %>%
+#   filter(year %in% 1870:1977) %>% 
+#   select(year,
+#          registrations.class.CD.per100k,                     
+#          registrations.class.GHIJK.per100k,                     
+#          registrations.class.LM.per100k 
+#          ) %>%
+#   rename(`CD: Dramatic Works and Lectures` = registrations.class.CD.per100k,
+#          `G--K: Graphical Works` = registrations.class.GHIJK.per100k,
+#          `E: Motion Pictures` = registrations.class.LM.per100k ) %>%
+#   pivot_longer(cols = c(
+#    names(.)[names(.) != 'year']
+#   )) 
+# f_df = f_df[f_df$value != 0, ]
+# 
+# b = ggplot(f_df, aes(year, value))  +
+#   geom_path(alpha = 0.7, aes(color = name, linetype = name)) +
+#   geom_point(alpha = 0.7, aes(color = name, shape = name)) +
+#   scale_y_continuous(labels = comma) +
+#   theme_excel_new() +
+#   theme(panel.grid.major.x = element_blank()) + 
+#   theme(axis.title = element_blank()) + 
+#   theme(legend.position="bottom",
+#         legend.direction="vertical")
+# grid.arrange(a,b)
+# 
+# ggsave(width = 5, height = 4, dpi = 600, filename = "figures/Figure 6 - Copyright Registrations per Capita by Type 1870-2012 (top) and 1870-1977 (bottom).png")
+```
+
+# Figure 6 - Copyright Registrations per Capita by Type 1870-2012 
+
+```{r}
+
+
+f_df = df %>%
+  filter(year %in% 1870:2012) %>% 
+  select(year,
+         registrations.class.A.per100k,                      
+         registrations.class.B.per100k,                     
+         registrations.class.E.per100k,
+         registrations.class.GHIJK.per100k 
+         ) %>%
+  rename(`A: Books` = registrations.class.A.per100k,
+         `B: Periodicals` = registrations.class.B.per100k,
+         `E: Music` = registrations.class.E.per100k,
+         `G--K: Graphical Works` = registrations.class.GHIJK.per100k,) %>%
+  pivot_longer(cols = c(
+   names(.)[names(.) != 'year']
+  )) 
+f_df = f_df[f_df$value != 0, ]
+
+ggplot(f_df, aes(year, value)) +
+  geom_path(alpha = 0.7, aes(color = name, linetype = name)) +
+  geom_point(alpha = 0.7, aes(color = name, shape = name)) +
+  scale_y_continuous(labels = comma) +
+  theme_excel_new() +
+  theme(panel.grid.major.x = element_blank()) + 
+  theme(axis.title = element_blank()) + 
+  theme(legend.position="bottom",
+        legend.direction="vertical")
+
+ggsave(width = 5, height = 4, dpi = 600, filename = "figures/Figure 6 - Copyright Registrations per Capita by Type 1870-2012 (top) and 1870-1977 (bottom).png")
+```
+
+# Figure 9 - Nominal and Inflation-Adjusted Copyright Registration Fees (\$) 1790-2015
+
+```{r}
+f_df = df %>% 
+  select(year,
+         registration.fee,
+         real.registration.fee
+         ) %>%
+  rename(`Registration Fee` = registration.fee,
+         `Real Registration Fee` = real.registration.fee,
+       ) %>%
+  pivot_longer(cols = c(
+   names(.)[names(.) != 'year']
+  )) 
+f_df = f_df[f_df$value != 0, ]
+
+ggplot(f_df, aes(year, value)) +
+  geom_path(alpha = 0.7, aes(color = name, linetype = name)) +
+  geom_point(alpha = 0.7, aes(color = name, shape = name)) +
+  scale_y_continuous(labels = comma) +
+  theme_excel_new() +
+  theme(panel.grid.major.x = element_blank()) + 
+  theme(axis.title = element_blank()) 
+
+ggsave(width = 5, height = 4, dpi = 600, filename = "figures/Figure 9 - Nominal and Inflation-Adjusted Copyright Registration Fees () 1790-2015.png")
+```
+
+
+# Figure 10 - Copyright Registration per Capita 1790-1870 and 1870-1909 Showing Fees
+
+```{r}
+f_df = df %>%
+  filter(year %in% 1790:1870) %>% 
+   select(year,
+         total.registrations.post.1790.per100k,
+         real.registration.fee
+         ) %>%
+  rename(`Real Fees` = real.registration.fee) %>%
+  pivot_longer(cols = c( total.registrations.post.1790.per100k)) 
+
+a = ggplot(f_df, aes(year, value)) +
+  geom_path() +
+  geom_point(alpha = 0.7, aes(size = `Real Fees`)) +
+  geom_smooth()+
+  scale_y_continuous(labels = comma) +
+  theme_excel_new() +
+  theme(panel.grid.major.x = element_blank()) 
+
+f_df = df %>%
+  filter(year %in% 1870:1909) %>% 
+   select(year,
+         total.registrations.post.1790.per100k,
+         real.registration.fee
+         ) %>%
+  rename(`Real Fees` = real.registration.fee) %>%
+  pivot_longer(cols = c( total.registrations.post.1790.per100k)) 
+
+b = ggplot(f_df, aes(year, value)) +
+  geom_path() +
+  geom_point(alpha = 0.7, aes(size = `Real Fees`)) +
+  geom_smooth()+
+  scale_y_continuous(labels = comma) +
+  theme_excel_new() +
+  theme(panel.grid.major.x = element_blank()) 
+
+c = arrangeGrob(a,b)
+c
+
+ggsave(width = 5, height = 4, dpi = 600, filename = "figures/Figure 10 - Copyright Registration per Capita 1790-1870 and 1870-1909 Showing Fees.png",c)
+```
+
+# Figure 11 - Copyright Registration per Capita 1909-1977 Showing Fees
+
+```{r}
+f_df = df%>%
+  filter(year %in% 1909:1977) %>% 
+   select(year,
+         total.registrations.post.1790.per100k,
+         real.registration.fee
+         ) %>%
+  rename(`Real Fees` = real.registration.fee) %>%
+  pivot_longer(cols = c( total.registrations.post.1790.per100k)) 
+
+ggplot(f_df, aes(year, value)) +
+  geom_path() +
+  geom_point(alpha = 0.7, aes(size = `Real Fees`)) +
+  geom_smooth()+
+  scale_y_continuous(labels = comma) +
+  theme_excel_new() +
+  theme(panel.grid.major.x = element_blank()) 
+
+
+ ggsave(width = 5, height = 4, dpi = 600, filename = "figures/Figure 11 - Copyright Registration per Capita 1909-1977 Showing Fees.png")
+```
+
+# Figure 12 - Total Renewals per Million People
+
+```{r}
+
+f_df = df %>%
+  filter(year %in% 1909:1990) %>%
+  select(year,    
+         pop,
+         renewals.total
+         ) %>%
+  mutate(renewals_per_1m = 10^6 * renewals.total/pop) %>%
+  select(year, renewals_per_1m)
+  
+f_df = f_df[f_df$renewals_per_1m != 0, ]
+
+ggplot(f_df[1:83,], aes(year, renewals_per_1m)) +
+  geom_path(alpha = 0.7) +
+  geom_point(alpha = 0.7) +
+  geom_smooth() +
+  scale_y_continuous(labels = comma) +
+  theme_excel_new() +
+  theme(panel.grid.major.x = element_blank()) + 
+  theme(axis.title = element_blank()) 
+
+ggsave(width = 5, height = 4, dpi = 600, filename = "figures/Figure 12 - Total Renewals per Million People.png")
+```
+
+<!-- # Figure 13 - Renewals by Class Filed 1909-1990 -->
+
+```{r}
+# f_df = df %>% 
+#   filter(year %in% 1909:1990) %>% 
+#   select(year,
+#          renewals.class.A,                     
+#          renewals.class.B,                     
+#          renewals.class.E 
+#          ) %>%
+#   rename(`A: Books` = renewals.class.A,
+#          `B: Periodicals` = renewals.class.B,
+#          `E: Music` = renewals.class.E ) %>%
+#   pivot_longer(cols = c(
+#    names(.)[names(.) != 'year']
+#   )) 
+# f_df = f_df[f_df$value != 0, ]
+# 
+# a = ggplot(f_df, aes(year, value)) +
+#   geom_path(alpha = 0.7, aes(color = name, linetype = name)) +
+#   geom_point(alpha = 0.7, aes(color = name, shape = name)) +
+#   scale_y_continuous(labels = comma) +
+#   theme_excel_new() +
+#   theme(panel.grid.major.x = element_blank()) + 
+#   theme(axis.title = element_blank()) 
+# 
+# f_df = df %>%
+#   filter(year %in% 1909:1990) %>% 
+#   select(year,
+#          renewals.class.CD,                     
+#          renewals.class.GHIJK,                     
+#          renewals.class.LM 
+#          ) %>%
+#   rename(`CD: Dramatic Works and Lectures` = renewals.class.CD,
+#          `G--K: Graphical Works` = renewals.class.GHIJK,
+#          `LM: Motion Pictures` = renewals.class.LM ) %>%
+#   pivot_longer(cols = c(
+#    names(.)[names(.) != 'year']
+#   )) 
+# f_df = f_df[f_df$value != 0, ]
+# 
+# b = ggplot(f_df, aes(year, value))  +
+#   geom_path(alpha = 0.7, aes(color = name, linetype = name)) +
+#   geom_point(alpha = 0.7, aes(color = name, shape = name)) +
+#   scale_y_continuous(labels = comma) +
+#   theme_excel_new() +
+#   theme(panel.grid.major.x = element_blank()) + 
+#   theme(axis.title = element_blank()) + 
+#   theme(legend.position="bottom",
+#         legend.direction="vertical")
+# grid.arrange(a,b)
+# 
+# ggsave(width = 5, height = 4, dpi = 600, filename = "figures/Figure 13 - Renewals by Class Filed 1909-1990.png")
+```
+
+# Figure 13 - Renewals by Class Filed 1909-1990 
+
+```{r}
+
+f_df = df %>%
+  filter(year %in% 1909:1990) %>% 
+  select(year,
+         renewals.class.A,                     
+         renewals.class.B,                     
+         renewals.class.E,
+         renewals.class.LM 
+         ) %>%
+  rename(`A: Books` = renewals.class.A,
+         `B: Periodicals` = renewals.class.B,
+         `E: Music` = renewals.class.E,
+         `LM: Motion Pictures` = renewals.class.LM) %>%
+  pivot_longer(cols = c(
+   names(.)[names(.) != 'year']
+  )) 
+f_df = f_df[f_df$value != 0, ]
+
+ggplot(f_df, aes(year, value)) +
+  geom_path(alpha = 0.7, aes(color = name, linetype = name)) +
+  geom_point(alpha = 0.7, aes(color = name, shape = name)) +
+  scale_y_continuous(labels = comma) +
+  theme_excel_new() +
+  theme(panel.grid.major.x = element_blank()) + 
+  theme(axis.title = element_blank())  + 
+  theme(legend.position="bottom",
+        legend.direction="vertical")
+
+ggsave(width = 5, height = 4, dpi = 600, filename = "figures/Figure 13 - Renewals by Class Filed 1909-1990.png")
+```
+
+# Figure 14 - Total Renewal Rate For Renewals Filed 1909-1990
+
+```{r}
+f_df = df %>%
+  filter(year %in% 1909:1990) %>% 
+  select(year,
+         renewals.rate.total
+         ) %>%
+  # rename(`Raw Registrations` = original.total.registrations.post.1790,
+  #        `Normalized Registrations` = total.registrations.post.1790) %>%
+  pivot_longer(cols = c(
+   names(.)[names(.) != 'year']
+  )) 
+
+f_df = f_df[f_df$value != 0, ]
+
+
+ggplot(f_df, aes(year, value)) +
+  geom_path() +
+  geom_point(alpha = 0.7) +
+  geom_smooth()+
+  scale_y_continuous(labels = round) +
+  theme_excel_new() +
+  theme(panel.grid.major.x = element_blank()) + 
+  theme(axis.title=element_text(size=12)) +
+  ylab("%")+
+  theme(axis.title.x = element_blank(),
+        axis.title.y = element_text(angle = 0))
+
+
+ggsave(width = 5, height = 4, dpi = 600, filename = "figures/Figure 14 - Total Renewal Rate For Renewals Filed 1909-1990.png")
+```
+
+<!-- # Figure 15 - Renewal Rates by Class Renewed 1909-1990 -->
+
+```{r}
+# f_df = df %>%
+#   filter(year %in% 1909:1990) %>% 
+#   select(year,
+#          renewals.rate.A,                     
+#          renewals.rate.B,                     
+#          renewals.rate.E 
+#          ) %>%
+#   rename(`A: Books` = renewals.rate.A,
+#          `B: Periodicals` = renewals.rate.B,
+#          `E: Music` = renewals.rate.E ) %>%
+#   pivot_longer(cols = c(
+#    names(.)[names(.) != 'year']
+#   )) 
+# f_df = f_df[f_df$value != 0, ]
+# 
+# a = ggplot(f_df, aes(year, value)) +
+#   geom_path(alpha = 0.7, aes(color = name, linetype = name)) +
+#   geom_point(alpha = 0.7, aes(color = name, shape = name)) +
+#   scale_y_continuous(labels = comma) +
+#   theme_excel_new() +
+#   theme(panel.grid.major.x = element_blank()) + 
+#   theme(axis.title = element_blank()) 
+# 
+# f_df = df %>%
+#   filter(year %in% 1909:1990) %>% 
+#   select(year,
+#          renewals.rate.CD,                     
+#          renewals.rate.GHIJK,                     
+#          renewals.rate.LM 
+#          ) %>%
+#   rename(`CD: Dramatic Works and Lectures` = renewals.rate.CD,
+#          `GK: Graphical Works` = renewals.rate.GHIJK,
+#          `LM: Motion Pictures` = renewals.rate.LM ) %>%
+#   pivot_longer(cols = c(
+#    names(.)[names(.) != 'year']
+#   )) 
+# f_df = f_df[f_df$value != 0, ]
+# 
+# b = ggplot(f_df, aes(year, value))  +
+#   geom_path(alpha = 0.7, aes(color = name, linetype = name)) +
+#   geom_point(alpha = 0.7, aes(color = name, shape = name)) +
+#   scale_y_continuous(labels = comma) +
+#   theme_excel_new() +
+#   theme(panel.grid.major.x = element_blank()) + 
+#   theme(axis.title = element_blank()) + 
+#   theme(legend.position="bottom",
+#         legend.direction="vertical")
+# grid.arrange(a,b)
+# 
+# ggsave(width = 5, height = 4, dpi = 600, filename = "figures/Figure 15 - Renewals Rates by Class Renewed 1909-1990.png")
+```
+
+
+# Figure 15 - Renewal Rates by Class Renewed 1909-1990 
+
+```{r}
+f_df = df %>%
+  filter(year %in% 1909:1990) %>% 
+  select(year,
+         renewals.rate.A,                     
+         renewals.rate.B,                     
+         renewals.rate.E, 
+         renewals.rate.CD,                     
+         renewals.rate.GHIJK,
+         renewals.rate.LM  
+         ) %>%
+  rename(`A: Books` = renewals.rate.A,
+         `B: Periodicals` = renewals.rate.B,
+         `E: Music` = renewals.rate.E,
+         `CD: Dramatic Works and Lectures` = renewals.rate.CD,
+         `G--K: Graphical Works` = renewals.rate.GHIJK,
+         `LM: Motion Pictures` = renewals.rate.LM ) %>%
+  pivot_longer(cols = c(
+   names(.)[names(.) != 'year']
+  )) 
+f_df = f_df[f_df$value != 0, ]
+
+ggplot(f_df, aes(year, value)) +
+  geom_path(alpha = 0.7, aes(color = name, linetype = name)) +
+  geom_point(alpha = 0.7, aes(color = name, shape = name)) +
+  scale_y_continuous(labels = comma) +
+  theme_excel_new() +
+  theme(panel.grid.major.x = element_blank()) + 
+  theme(axis.title = element_blank())  + 
+  theme(legend.position="bottom",
+        legend.direction="vertical")
+
+
+ggsave(width = 5, height = 4, dpi = 600, filename = "figures/Figure 15 - Renewals Rates by Class Renewed 1909-1990.png")
+```
+
+
+# Figure 20 - Impact of 1909 Act on Relationship between Registrations and GDP
+
+```{r}
+# Based on the coefficients reported in Table 5, the contribution of log(gdp) to log registrations was 1.499 from 1790-1909, i.e. a 1% change in gdp was associated with a 1.499% increase in registrations. That rate fell to 0.483 in the post-1909 era.
+
+f_df = df %>%
+  select(year,
+         total.registrations.post.1790_log,
+         real.gdp_log) %>%
+  mutate(coef = c(rep(1.499,119), rep(0.483, 107)),
+         name = "contribution")
+
+f_df$log_reg_from_gdp = f_df$coef*f_df$real.gdp_log
+
+f_df$log_reg_from_gdp[120:226] = 13.632 + f_df$log_reg_from_gdp[120:226] 
+
+it = f_df %>%
+  select(year, real.gdp_log, log_reg_from_gdp, name) %>%
+  rename(`log(real gdp)` = real.gdp_log, 
+         `log(registrations associated with gdp)` = log_reg_from_gdp)
+
+ggplot(it, aes(`log(real gdp)`,`log(registrations associated with gdp)`)) +
+  geom_line() + 
+  theme_excel_new() +
+  theme(panel.grid.major.x = element_blank()) +
+  theme(axis.title = element_blank()) +
+  theme(axis.title=element_text(size=12)) +
+  xlab("Log(Real GDP)") +
+  ylab("Contribution to Log(Registrations)")+
+  scale_y_continuous(labels = comma)
+
+ggsave(width = 5, height = 4, dpi = 600, filename = "figures/Figure 20 - Impact of 1909 Act on Relationship between Registrations and GDP.png")
+```
+
+```{r}
+# # Based on the coefficients reported in Table 5, the contribution of log(gdp) to log registrations was 1.499 from 1790-1909, i.e. a 1% change in gdp was associated with a 1.499% increase in registrations. That rate fell to 0.483 in the post-1909 era.
+# 
+# f_df = df %>%
+#   select(year,
+#          total.registrations.post.1790_log,
+#          real.gdp_log) %>%
+#   mutate(coef = c(rep(1.499,119), rep(0.483, 107)),
+#          name = "contribution")
+# 
+# f_df$log_reg_from_gdp = f_df$coef*f_df$real.gdp_log
+# 
+# f_df$log_reg_from_gdp[120:226] = 13.632 + f_df$log_reg_from_gdp[120:226] 
+# 
+# it = f_df %>%
+#   select(year, real.gdp_log, log_reg_from_gdp, name) %>%
+#   mutate(`Real GDP` = exp(real.gdp_log), 
+#          `Registrations associated with GDP` = exp(log_reg_from_gdp))
+# 
+# ggplot(it, aes(`Real GDP`, `Registrations associated with GDP`)) +
+#   geom_line() + 
+#   theme_excel_new() +
+#   theme(panel.grid.major.x = element_blank()) +
+#   theme(axis.title = element_blank()) +
+#   scale_y_continuous(labels = comma)
+#   ggtitle("Response of Registrations to Real GDP")
+# 
+# ggsave(width = 5, height = 4, dpi = 600, filename = "figures/Figure 20 - Impact of 1909 Act on Relationship between Registrations and GDP.png")
+```
+
+# Figure 21 - Estimated Contribution of Total Term to Yearly Registrations
+
+```{r}
+
+f_df = df %>%
+  select(year,
+         total.term,
+         total.term_log,
+         total.term_log2) 
+
+x = 1:80
+y = 5.301 * (log(x)) - 0.614 * (log(x) ^ 2)
+f_df = data.frame(x = x, y = exp(y))
+
+
+ggplot() +
+  geom_line(data = f_df, aes(x,y))+ 
+  geom_text(data = data.frame(x = 75, y = 84000, note = "maximum\nat\n75 years"), aes(x,y,label = note)) + 
+  theme_excel_new()  +
+  theme(panel.grid.major.x = element_blank()) +
+  theme(axis.title=element_text(size=12)) +
+  xlab("Total Term of Protection") +
+  ylab("Contribution to Registrations")+
+  scale_y_continuous(labels = comma)
+
+ggsave(width = 5, height = 4, dpi = 600, filename = "figures/Figure 21 - Estimated Contribution of Total Term to Yearly Registrations.png")
+```
+
+# Figure 22 - Predicted versus Actual log(Registrations)
+
+```{r}
+f_df = df %>%
+  select(
+    year,
+    total.registrations.post.1790_log,
+    real.registration.fee_log,
+    real.gdp_log,
+    total.term_log,
+    total.term_log2,
+    real.gdp_log.x.1909,
+    copyright.act.1909
+  ) %>%
+  mutate(
+    `Predicted log(Registrations)` =
+      (-19.658) +
+      (-0.063 * real.registration.fee_log) +
+      (1.499 * real.gdp_log) +
+      (5.301 * total.term_log) +
+      (-0.614 * total.term_log2) +
+      (-1.016 * real.gdp_log.x.1909) +
+      (13.632 * copyright.act.1909)
+  ) %>%
+  rename(`Actual log(Registrations)` = total.registrations.post.1790_log) %>%
+  select(year,
+         `Predicted log(Registrations)`,
+         `Actual log(Registrations)`) %>%
+  pivot_longer(cols = c(`Predicted log(Registrations)`,
+                        `Actual log(Registrations)`))
+
+ggplot(f_df, aes(year, value)) +
+  geom_line(aes(color = name, linetype = name)) +
+  theme_excel_new() +
+  theme(panel.grid.major.x = element_blank()) +
+  theme(axis.title = element_blank()) 
+
+ggsave(width = 5, height = 4, dpi = 600, filename = "figures/Figure 22 - Predicted versus Actual log(Registrations).png")
+
+```
+
+
+
+# Figure A1 - Expected Life and Depreciation Rates Based on CCEs 
+
+```{r}
+f_df = df %>%
+  select(
+    year,
+    expected.life,
+    depreciation.rate
+  ) %>%
+  filter(year %in% 1909:1990)
+  #%>%
+  # rename(`Expected Life of Copyright (years)` = expected.life,
+  # `Depreciation Rate` = depreciation.rate) %>%
+  # pivot_longer(cols = c(
+  #  names(.)[names(.) != 'year']
+  # )) 
+
+a = ggplot(f_df, aes(year, expected.life)) +
+  geom_line() +
+  geom_point(alpha = 0.7) +
+  geom_smooth() +
+  theme_excel_new() +
+  theme(panel.grid.major.x = element_blank()) +
+  theme(axis.title = element_blank()) +
+  ggtitle("Expected Life of Copyright (years)")
+
+
+b = ggplot(f_df, aes(year, depreciation.rate)) +
+  geom_line() +
+  geom_point(alpha = 0.7) +
+  geom_smooth() +
+  scale_y_continuous(labels = percent) +
+  theme_excel_new() +
+  theme(panel.grid.major.x = element_blank()) +
+  theme(axis.title = element_blank()) +
+  ggtitle("Depreciation Rate")
+
+c = arrangeGrob(a,b)
+
+ggsave(width = 5, height = 4, dpi = 600, 
+       filename = "figures/Figure A1 - Expected Life and Depreciation Rates Based on CCEs.png", plot = c)
+
+```
+
+# Figure A2 - Real Recreation Spending Percent of Real GDP 
+
+```{r}
+f_df = df %>%
+  select(
+    year,
+    rec.percent.of.gdp
+  ) %>%
+  filter(year %in% 1921:2012)
+
+
+ggplot(f_df, aes(year, rec.percent.of.gdp)) +
+  geom_line() +
+  geom_point(alpha = 0.7) +
+  geom_smooth() +
+  theme_excel_new() +
+  theme(panel.grid.major.x = element_blank()) +
+  theme(axis.title = element_blank()) +
+  scale_y_continuous(labels = percent)
+
+ggsave(width = 5, height = 4, dpi = 600, 
+       filename = "figures/Figure A2 - Real Recreation Spending Percent of Real GDP.png")
+
+```
+
+# Figure A3 - Main Series Plots (Part 1)
+```{r}
+f_df = df %>%
+  select(
+    year,
+    total.registrations.post.1870,
+    registrations.class.A,
+    registrations.class.B,
+    registrations.class.CD,
+    registrations.class.E,
+    registrations.class.GHIJK,
+    registrations.class.LM
+  ) %>%
+  filter(year %in% 1870:2015) %>%
+  rename(`Total Registrations` = total.registrations.post.1870,
+         `A: Books` = registrations.class.A,
+         `B: Periodicals` = registrations.class.B,
+         `CD: Dramatic Works and Lectures` = registrations.class.CD,
+         `E: Music` = registrations.class.E,
+         `G-K: Graphical Works` = registrations.class.GHIJK,
+         `LM: Motion Pictures` = registrations.class.LM ) %>%
+  pivot_longer(cols = c(
+   names(.)[names(.) != 'year']
+  ))
+
+f_df$value[f_df$value == 0] = NA
+
+ggplot(f_df, aes(year, value)) +
+  geom_line() +
+  # geom_point(alpha = 0.7) +
+  theme_excel_new() +
+  theme(panel.grid.major.x = element_blank()) +
+  theme(axis.title = element_blank()) +
+  scale_y_continuous(labels = comma) +
+  facet_wrap(~name,
+             ncol = 1,
+             scales = "free_y")
+
+ggsave(width = 5, height = 6, dpi = 600, 
+       filename = "figures/Figure A3 - Main Series Plots (Part 1).png")
+
+```
+# Figure A4 - Main Series Plots (Part 2)
+```{r}
+f_df = df %>%
+  select(
+    year,
+    total.registrations.post.1870.per100k,
+    real.gdp,
+    total.term,
+    real.registration.fee
+  ) %>%
+  filter(year %in% 1870:2015) %>%
+  rename(`Total Registrations per Capita` = total.registrations.post.1870.per100k,
+    `Real GDP ($ M)` = real.gdp,
+    `Total Term of Copyright Protection (years)` = total.term,
+    `Real Registration Fee ($)`= real.registration.fee) %>%
+  pivot_longer(cols = c(
+   names(.)[names(.) != 'year']
+  ))
+
+f_df$value[f_df$value == 0] = NA
+
+ggplot(f_df, aes(year, value)) +
+  geom_line() +
+  # geom_point(alpha = 0.7) +
+  theme_excel_new() +
+  theme(panel.grid.major.x = element_blank()) +
+  theme(axis.title = element_blank()) +
+  scale_y_continuous(labels = comma) +
+  facet_wrap(~name,
+             ncol = 1,
+             scales = "free_y")
+
+ggsave(width = 5, height = 6, dpi = 600, 
+       filename = "figures/Figure A4 - Main Series Plots (Part 2).png")
+
+```
+
+
+```{r, include = F}
+t3 = make_tables(t3_formulas, estimation_technique = "prais") # Use "lm" for OLS
+t4 = make_tables(t4_formulas, estimation_technique = "prais")
+t5 = make_tables(t5_formulas, estimation_technique = "prais") # Or use "orcutt" for cochrane-orcutt
+t6 = make_tables(t6_formulas, estimation_technique = "prais")
+t7 = make_tables(t7_formulas, estimation_technique = "prais",
+            min_year = 1909,
+            max_year = 2006)
+
+# Use "lm" for OLS
+tA1_a = make_tables(tA1_formulas, estimation_technique = "lm") 
+# Use "prais" for Prais-Watson
+tA1_b = make_tables(tA1_formulas, estimation_technique = "prais") 
+# Or use "orcutt" for cochrane-orcutt
+tA1_c = make_tables(tA1_formulas, estimation_technique = "orcutt") 
+
+tA2 = make_tables(tA2_formulas, estimation_technique = "prais") 
+
+tA3_a = make_tables(tA3_formulas, estimation_technique = "lm",
+                    min_year = 1911,
+                    max_year = 2000)
+tA3_b = make_tables(tA3_formulas, estimation_technique = "prais",
+                    min_year = 1911,
+                    max_year = 2000) 
+tA3_c = make_tables(tA3_formulas, estimation_technique = "orcutt",
+                    min_year = 1911,
+                    max_year = 2000) 
+
+tA4 = make_tables(tA4_formulas, estimation_technique = "prais",
+                  min_year = 1870,
+                  max_year = 2012) 
+
+tA4_bcd = make_tables(tA4_formulas[2:3], estimation_technique = "prais",
+                  min_year = 1870,
+                  max_year = 1977) 
+
+tA4_lm = make_tables(tA4_formulas[6], estimation_technique = "prais",
+                  min_year = 1912,
+                  max_year = 2012) 
+
+tA5_a = make_tables(tA5_formulas[1:4], 
+            estimation_technique = "prais",
+            min_year = 1909,
+            max_year = 1990) 
+tA5_b = make_tables(tA5_formulas[5], 
+            estimation_technique = "prais",
+            min_year = 1915,
+            max_year = 1990) 
+tA5_c = make_tables(tA5_formulas[6], 
+            estimation_technique = "prais",
+            min_year = 1941,
+            max_year = 1990)
+
+tA6 = make_tables(tA6_formulas, 
+            estimation_technique = "prais",
+            min_year = 1909,
+            max_year = 1990)
+```
+
+# Table 3 Log Total Copyright Registrations, 1790–2015 
+
+```{r, results='asis'}
+t3
+```
+
+# Table 4 Log Total Copyright Registrations, 1790–2015 
+
+```{r, results='asis'}
+t4
+```
+
+# Table 5 Log Total Copyright Registrations, 1790–2015 
+
+```{r, results='asis'}
+t5
+```
+
+
+```{r}
+# years = (0:750)/10
+# registrations = exp(5.452 *log(years) - 0.635 *log(years)^2)
+# library(ggplot2)
+# ggplot(data.frame(years, registrations),
+#        aes(x = years, y = registrations))+
+#     geom_line()
+
+```
+
+# Table 6 Log Total Copyright Registrations per 100,000 people, 1790–2015 
+
+```{r, results='asis'}
+t6
+```
+
+
+# Table 7 Log Renewals, 1909–2006 
+
+```{r, results='asis'}
+t7
+```
+
+# Table A1 Log Total Copyright Registrations, 1790-2015 
+
+```{r, results='asis'}
+tA1_a
+tA1_b
+tA1_c
+```
+
+# Table A2 Log Total Copyright Registrations with Statutory Events, 1790-2015 
+
+
+```{r, results='asis'}
+tA2
+```
+
+# Table A3 Landes-Posner Specification, 1910-2000 
+
+```{r, results='asis'}
+tA3_a
+tA3_b
+tA3_c
+```
+
+# Table A4 Registrations by Class 
+
+## 1870 - 2012
+```{r, results='asis'}
+tA4
+```
+
+## 1870 - 1977
+
+```{r}
+tA4_bcd
+```
+
+## 1912 - 2012
+
+```{r}
+tA4_lm
+```
+
+# Table A5 Renewals by Class
+
+```{r, results='asis'}
+tA5_a
+tA5_b
+tA5_c
+```
+
+# Table A6 Renewal Rate
+
+```{r, results='asis'}
+tA6
+```

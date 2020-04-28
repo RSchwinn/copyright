@@ -14,16 +14,8 @@ https://github.com/RSchwinn/copyright/
  
 2. Download and install R, from https://cloud.r-project.org/, and RStudio, from https://www.rstudio.com/products/rstudio/download/#download.
  
-3. After both R and RStudio are installed, unzip the repository from step (1), if it was not automatically unzipped, and open the file named `copyright.Rproj`.
-
-## UPDATE:
-
-Now, all the figures and statistical results are executable from a single file.
-
-4. From the "Files” panel, select and open `all_results_and_figures.Rmd` and press the KNIT button. The KNIT button is above the console and has a ball of yarn next to it. This will prepare the data, save the figures in a "figures" folder, and create a document that includes all the figures and statistical results.
-
-## Original Instructions
-
+3. After both R and RStudio are installed, unzip the repository from step (1), if it was not automatically unzipped, and open the file `copyright.Rproj`.
+ 
 4. From the "Files” panel, select and open `step_1_data_prep.R` and run each line of code in the file (in order). To run a line of code, put the cursor on a given line and click the RUN button (or press **CTRL+ENTER** on PC or **COMMAND+ENTER** on MAC). To run more than one line at a time, highlight additional lines of using **SHIFT** on your keyboard or use your mouse.
  
 5. Next, select and open `step_2_data_analysis.R` and run each line of code in the file.
