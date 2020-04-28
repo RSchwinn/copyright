@@ -1231,7 +1231,9 @@ ggsave(width = 5, height = 4, dpi = 600,
 
 ```
 
+
 # Figure A3 - Main Series Plots (Part 1)
+
 ```{r}
 f_df = df %>%
   select(
@@ -1273,7 +1275,9 @@ ggsave(width = 5, height = 6, dpi = 600,
        filename = "figures/Figure A3 - Main Series Plots (Part 1).png")
 
 ```
+
 # Figure A4 - Main Series Plots (Part 2)
+
 ```{r}
 f_df = df %>%
   select(
